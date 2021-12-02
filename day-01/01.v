@@ -1,7 +1,7 @@
 import os
 
 fn get_input() ?[]int {
-	lines := os.read_lines('data.in') ?
+	lines := os.read_lines('../data/01.in') ?
 	nums := lines.map(fn (w string) int {
 		return w.int()
 	})

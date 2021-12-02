@@ -6,7 +6,7 @@ struct Ins {
 }
 
 fn get_input() ?[]Ins {
-	lines := os.read_lines('data.in') ?
+	lines := os.read_lines('../data/02.in') ?
 	nums := lines.map(fn (w string) Ins {
 		instruction := w.split(' ')
 		// No array destructuring, V?
