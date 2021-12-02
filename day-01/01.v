@@ -39,19 +39,18 @@ fn part_2(arr []int) int {
 
 	mut counter := int(0)
 
-	mut sliding_sum := sum(...arr[0..3])
-
 	for idx, value in arr {
 		if idx < 3 {
 			continue
 		}
 		// If the value coming in is larger than
 		// the one going out, then there'll be an increase.
+
+		// Furthermore, all increases will be accounted for
+		// this way.
 		if value > arr[idx - 3] {
 			counter += 1
 		}
-		// Shift the sliding window to the right.
-		sliding_sum += (value - arr[idx - 3])
 	}
 
 	return counter
