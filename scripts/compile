@@ -1,9 +1,11 @@
 START_=${AOC_START:-1}
 END_=${AOC_END:-2}
 
+ROOT="/home/infinity/dev/advent-of-code-2021"
+
 compile() {
     echo ----- Compiling Day $1 -----
-    time v ../src/$1.v -o ../bin/$1
+    time v $ROOT/src/$1.v -o $ROOT/bin/$1
 }
 
 for i in $(seq $START_ $END_);

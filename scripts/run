@@ -1,10 +1,11 @@
 START_=${AOC_START:-1}
 END_=${AOC_END:-2}
 
+ROOT="/home/infinity/dev/advent-of-code-2021"
 
 solve() {
     echo ----- Solving Day $1 -----
-    time ../bin/$1 < ../data/$1.in
+    time $ROOT/bin/$1 < $ROOT/data/$1.in
 }
 
 
