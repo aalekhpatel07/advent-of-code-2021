@@ -1,5 +1,6 @@
 import os
 
+// Store the bit count across a particular column of the input data.
 struct BitFrequency {
 mut:
 	zeroes i64
@@ -7,17 +8,18 @@ mut:
 }
 
 fn parse_input(lines []string) ?[]BitFrequency {
+	// Populate the bit counts across the bins for every position.
 	number_of_bins := lines[0].len
 	mut bitfreqs := []BitFrequency{len: number_of_bins, cap: number_of_bins, init: BitFrequency{0, 0}}
 
-	for w in lines {
+	for w_idx, w in lines {
 		for idx, elem in w {
 			if elem == 48 {
 				bitfreqs[idx].zeroes += 1
 			} else if elem == 49 {
 				bitfreqs[idx].ones += 1
 			} else {
-				panic('Whoops')
+				panic('Non-binary character encountered: $elem, index: $idx, row: $w_idx, word: $w')
 			}
 		}
 	}
@@ -25,12 +27,12 @@ fn parse_input(lines []string) ?[]BitFrequency {
 	return bitfreqs
 }
 
-fn part_1(arr []BitFrequency) i64 {
+fn part_1(freqs []BitFrequency) i64 {
 	mut gamma_rate := i64(0)
 	mut epsilon := i64(0)
 
 	mut pow := 1
-	for item in arr.reverse() {
+	for item in freqs.reverse() {
 		if item.ones > item.zeroes {
 			gamma_rate += pow
 		} else if item.zeroes > item.ones {
@@ -49,11 +51,13 @@ mut:
 }
 
 fn to_dec(b string) i64 {
+	// Convert a binary string to i64.
+
 	mut result := i64(0)
 	mut pow := 1
 
 	for item in b.reverse() {
-		if item == 49 {
+		if item == 49 { // 0
 			result += pow
 		}
 		pow *= 2
@@ -65,86 +69,73 @@ fn (r Round) is_complete() bool {
 	return r.words.len <= 1
 }
 
+fn round_of_ones(words []string) Round {
+	return Round{words.map(fn (w string) string {
+		return w.trim_prefix('1')
+	}), '1'}
+}
+
+fn round_of_zeros(words []string) Round {
+	return Round{words.map(fn (w string) string {
+		return w.trim_prefix('0')
+	}), '0'}
+}
+
 fn filter_words(words []string, max bool) Round {
 	if words.len <= 1 {
-		return Round{words, '2'}
+		return Round{words, '-1'}
 	}
 
 	lead_zeros := words.filter(fn (w string) bool {
-		return w[0] == 48
+		return w[0] == 48 // 0
 	})
 
 	lead_ones := words.filter(fn (w string) bool {
-		return w[0] == 49
+		return w[0] == 49 // 1
 	})
 
-	if lead_ones.len == lead_zeros.len {
-		if max {
-			return Round{lead_ones.map(fn (w string) string {
-				return w.trim_prefix('1')
-			}), '1'}
-		} else {
-			return Round{lead_zeros.map(fn (w string) string {
-				return w.trim_prefix('0')
-			}), '0'}
-		}
-	} else if lead_ones.len > lead_zeros.len {
-		if max {
-			return Round{lead_ones.map(fn (w string) string {
-				return w.trim_prefix('1')
-			}), '1'}
-		} else {
-			return Round{lead_zeros.map(fn (w string) string {
-				return w.trim_prefix('0')
-			}), '0'}
-		}
-	} else {
-		if max {
-			return Round{lead_zeros.map(fn (w string) string {
-				return w.trim_prefix('0')
-			}), '0'}
-		} else {
-			return Round{lead_ones.map(fn (w string) string {
-				return w.trim_prefix('1')
-			}), '1'}
-		}
+	// If:
+	// #1s >= #0s and bit criteria is 'max'
+	// OR
+	// #0s > #1s and bit criteria is 'min'
+	// then 1's get picked out from the start.
+	// Else:
+	// 0's get picked out from the start.
+
+	if ((lead_ones.len >= lead_zeros.len) && max) || ((lead_ones.len < lead_zeros.len) && !max) {
+		return round_of_ones(lead_ones)
 	}
+	return round_of_zeros(lead_zeros)
+}
+
+fn run_criterion(words []string, max bool) string {
+	// Given some words and a bit criterion,
+	// simulate the result of filtering the words.
+
+	mut result := ''
+	mut current_round := filter_words(words, max)
+
+	result += current_round.winner
+
+	for {
+		if current_round.is_complete() {
+			// Append any remaining chars.
+			result += current_round.words[0]
+			break
+		}
+		current_round = filter_words(current_round.words.clone(), max)
+		result += current_round.winner
+	}
+	return result
 }
 
 fn part_2(lines []string) i64 {
-	mut result_oxygen := ''
-	mut result_co2 := ''
+	oxygen := run_criterion(lines.clone(), true)
+	co2 := run_criterion(lines.clone(), false)
 
-	mut oxygen := filter_words(lines.clone(), true)
-	mut co2 := filter_words(lines.clone(), false)
-	println(co2)
+	oxygen_value := to_dec(oxygen)
+	co2_value := to_dec(co2)
 
-	result_oxygen += oxygen.winner
-	result_co2 += co2.winner
-
-	for {
-		if oxygen.is_complete() {
-			result_oxygen += oxygen.words[0]
-			break
-		}
-		oxygen = filter_words(oxygen.words.clone(), true)
-		result_oxygen += oxygen.winner
-	}
-
-	for {
-		if co2.is_complete() {
-			result_co2 += co2.words[0]
-			break
-		}
-		co2 = filter_words(co2.words.clone(), false)
-		result_co2 += co2.winner
-		println(co2)
-	}
-
-	oxygen_value := to_dec(result_oxygen)
-	co2_value := to_dec(result_co2)
-
-	println('$oxygen_value, $co2_value')
 	return oxygen_value * co2_value
 }
 
