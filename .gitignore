@@ -9,4 +9,5 @@
 
 !scripts/*
 
+bin/
 .idea/
