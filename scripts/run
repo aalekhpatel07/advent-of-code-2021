@@ -1,15 +1,23 @@
-START_=${AOC_START:-1}
-END_=${AOC_END:-2}
-
-ROOT="/home/infinity/dev/advent-of-code-2021"
+#!/usr/bin/sh
 
 solve() {
     echo ----- Solving Day $1 -----
-    time $ROOT/bin/$1 < $ROOT/data/$1.in
+    time $AOC_ROOT/bin/$1 < $AOC_ROOT/data/$1.in
 }
 
+if [[ ! -d $AOC_ROOT/bin ]];
+then
+    echo "No binaries present. Invoke 'compile' script first."
+    exit
+fi;
 
-for i in $(seq $START_ $END_);
+if [[ ! -d $AOC_ROOT/data ]];
+then
+    echo "No $AOC_ROOT/data present. Invoke 'download-data' script first."
+    exit
+fi;
+
+for i in $@;
     do
         day=$(printf "%02d" $i)
         solve $day

@@ -1,0 +1,36 @@
+#!/usr/bin/sh
+
+YEAR=2021
+
+get_input_for_day() {
+    day=$(printf "%02d" $1)
+    curl \
+        -s \
+        --cookie "session=$AOC_SESSION" \
+        https://adventofcode.com/$YEAR/day/$1/input \
+        -o $AOC_ROOT/data/"$day".in
+    echo "----- Downloaded Day $day to $AOC_ROOT/data/$day.in -----"
+}
+
+if [[ -z $AOC_SESSION ]]
+then
+    echo "Session cookie 'AOC_SESSION' is not set." \
+         "Please log in to https://adventofcode.com/$YEAR " \
+         "and obtain your session cookie. " \
+         "The session cookie should probably last " \
+         "for an entire decade so keep it handy. " \
+         "Once downloaded, export the session cookie " \
+         "as 'AOC_SESSION'."
+    exit
+fi;
+
+if [[ -d $AOC_ROOT/data ]]
+then
+    mkdir -p "$AOC_ROOT/data"
+fi
+
+for d in $@
+do
+    get_input_for_day $d
+done
+
