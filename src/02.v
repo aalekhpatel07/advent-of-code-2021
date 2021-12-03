@@ -5,8 +5,7 @@ struct Ins {
 	quantity  i64
 }
 
-fn get_input() ?[]Ins {
-	lines := os.read_lines('../data/02.in') ?
+fn parse_input(lines []string) ?[]Ins {
 	nums := lines.map(fn (w string) Ins {
 		instruction := w.split(' ')
 		// No array destructuring, V?
@@ -74,7 +73,8 @@ fn part_2(arr []Ins) i64 {
 }
 
 fn main() {
-	instructions := get_input() ?
+	lines := os.get_lines()
+	instructions := parse_input(lines) ?
 
 	ans_1 := part_1(instructions)
 	ans_2 := part_2(instructions)

@@ -1,7 +1,6 @@
 import os
 
-fn get_input() ?[]int {
-	lines := os.read_lines('../data/01.in') ?
+fn parse_input(lines []string) ?[]int {
 	nums := lines.map(fn (w string) int {
 		return w.int()
 	})
@@ -57,7 +56,8 @@ fn part_2(arr []int) int {
 }
 
 fn main() {
-	nums := get_input() ?
+	lines := os.get_lines() // Read all lines from stdin.
+	nums := parse_input(lines) ?
 	ans_1 := part_1(nums)
 	ans_2 := part_2(nums)
 	println('part_1: $ans_1 \npart_2: $ans_2')

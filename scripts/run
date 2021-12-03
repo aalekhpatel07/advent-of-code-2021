@@ -1,0 +1,15 @@
+START_=${AOC_START:-1}
+END_=${AOC_END:-2}
+
+
+solve() {
+    echo ----- Solving Day $1 -----
+    time ../bin/$1 < ../data/$1.in
+}
+
+
+for i in $(seq $START_ $END_);
+    do
+        day=$(printf "%02d" $i)
+        solve $day
+    done;

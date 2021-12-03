@@ -1,0 +1,13 @@
+START_=${AOC_START:-1}
+END_=${AOC_END:-2}
+
+compile() {
+    echo ----- Compiling Day $1 -----
+    time v ../src/$1.v -o ../bin/$1
+}
+
+for i in $(seq $START_ $END_);
+    do
+        day=$(printf "%02d" $i)
+        compile $day
+    done;
