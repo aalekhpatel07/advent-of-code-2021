@@ -55,7 +55,7 @@ impl Bingo {
         // Check rows
         for row in self.played {
             // Looks weird but [true; 5] doesn't seem to work here.
-            if let [true, true, true, true, true] = row {
+            if row == [true; 5] {
                 return true;
             }
         }
@@ -162,15 +162,14 @@ mod tests {
         let result = Bingo::parse(bingo_str.as_bytes()).unwrap();
         assert_eq!(
             [
-                [22, 13, 17, 11, 0].map(|x| x as usize).to_vec(),
-                [8, 2, 23, 4, 24].map(|x| x as usize).to_vec(),
-                [21, 9, 14, 16, 7].map(|x| x as usize).to_vec(),
-                [6, 10, 3, 18, 5].map(|x| x as usize).to_vec(),
-                [1, 12, 20, 15, 19].map(|x| x as usize).to_vec(),
+                vec![22, 13, 17, 11, 0],
+                vec![8, 2, 23, 4, 24],
+                vec![21, 9, 14, 16, 7],
+                vec![6, 10, 3, 18, 5],
+                vec![1, 12, 20, 15, 19],
             ],
             result.entries.as_slice()
         );
-        println!("{:?}", result);
     }
 
     #[test]
@@ -196,11 +195,11 @@ mod tests {
         for result in results {
             assert_eq!(
                 [
-                    [22, 13, 17, 11, 0].map(|x| x as usize).to_vec(),
-                    [8, 2, 23, 4, 24].map(|x| x as usize).to_vec(),
-                    [21, 9, 14, 16, 7].map(|x| x as usize).to_vec(),
-                    [6, 10, 3, 18, 5].map(|x| x as usize).to_vec(),
-                    [1, 12, 20, 15, 19].map(|x| x as usize).to_vec(),
+                    vec![22, 13, 17, 11, 0],
+                    vec![8, 2, 23, 4, 24],
+                    vec![21, 9, 14, 16, 7],
+                    vec![6, 10, 3, 18, 5],
+                    vec![1, 12, 20, 15, 19],
                 ],
                 result.entries.as_slice()
             );
@@ -223,7 +222,7 @@ fn parse_bingo_from_stdin() -> Result<(Vec<usize>, Vec<Bingo>), io::Error> {
         })
         .collect::<Vec<usize>>();
     let bingos: Vec<Bingo> = Bingo::parse_many(&mut buffer[instructions_endpoint + 1..].as_bytes())
-        .expect("Some bingon couldn't be parsed.");
+        .expect("Some bingo couldn't be parsed.");
 
     Ok((calls.to_vec(), bingos))
 }
