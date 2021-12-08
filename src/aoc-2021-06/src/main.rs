@@ -18,7 +18,6 @@ fn main() {
     };
 
     buffer.clear();
-    println!("{:#?}", fishes);
 
     let result_part_1: usize = part_1::solve(&fishes);
     let result_part_2: usize = part_2::solve(&fishes);
