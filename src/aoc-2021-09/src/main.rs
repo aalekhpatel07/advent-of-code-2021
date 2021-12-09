@@ -239,8 +239,9 @@ mod tests {
         ";
 
         let grid = parser::read_grid(inp);
+        let wall: usize = 9;
 
-        let result_part_2 = part_2::solve(&grid);
+        let result_part_2 = part_2::solve(&grid, wall);
         assert_eq!(result_part_2, 1134);
     }
 }
