@@ -6,7 +6,7 @@ pub enum ScopeType {
     Bracket,
     Parenthesis,
     Brace,
-    Angle
+    Angle,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,9 +32,8 @@ pub struct LineParseError<'a> {
     pub expected: Option<char>,
     pub observed: Option<char>,
     pub symbol: Option<ScopeSymbol>,
-    pub kind: ErrorStructure
+    pub kind: ErrorStructure,
 }
-
 
 impl<'a> ScopeSymbol {
     fn new(kind: ScopeType, symbol: char, complement: char, is_opening: bool) -> Self {
@@ -47,128 +46,69 @@ impl<'a> ScopeSymbol {
     }
     pub fn try_from_char(symbol: char) -> Result<Self, LineParseError<'a>> {
         match symbol {
-            '(' => Ok(
-                    Self::new(
-                    ScopeType::Parenthesis,
-                        symbol,
-                    ')',
-                    true
-                )
-            ),
-            ')' => Ok(
-                Self::new(
-                    ScopeType::Parenthesis,
-                    symbol,
-                    '(',
-                    false
-                )
-            ),
-            '[' => Ok(
-                Self::new(
-                    ScopeType::Bracket,
-                    symbol,
-                    ']',
-                    true
-                )
-            ),
-            ']' => Ok(
-                Self::new(
-                    ScopeType::Bracket,
-                    symbol,
-                    '[',
-                    false
-                )
-            ),
-            '{' => Ok(
-                Self::new(
-                    ScopeType::Brace,
-                    symbol,
-                    '}',
-                    true,
-                )
-            ),
-            '}' => Ok(
-                Self::new(
-                    ScopeType::Brace,
-                    symbol,
-                    '{',
-                    false
-                )
-            ),
-            '<' => Ok(
-                Self::new(
-                    ScopeType::Angle,
-                    symbol,
-                    '>',
-                    true,
-                )
-            ),
-            '>' => Ok(
-                Self::new(
-                    ScopeType::Angle,
-                    symbol,
-                    '<',
-                    false
-                )
-            ),
-            _ => Err( LineParseError {
+            '(' => Ok(Self::new(ScopeType::Parenthesis, symbol, ')', true)),
+            ')' => Ok(Self::new(ScopeType::Parenthesis, symbol, '(', false)),
+            '[' => Ok(Self::new(ScopeType::Bracket, symbol, ']', true)),
+            ']' => Ok(Self::new(ScopeType::Bracket, symbol, '[', false)),
+            '{' => Ok(Self::new(ScopeType::Brace, symbol, '}', true)),
+            '}' => Ok(Self::new(ScopeType::Brace, symbol, '{', false)),
+            '<' => Ok(Self::new(ScopeType::Angle, symbol, '>', true)),
+            '>' => Ok(Self::new(ScopeType::Angle, symbol, '<', false)),
+            _ => Err(LineParseError {
                 source: "",
                 index: None,
                 expected: None,
                 observed: Some(symbol),
                 symbol: None,
-                kind: ErrorStructure::UnknownSymbol
-            })
+                kind: ErrorStructure::UnknownSymbol,
+            }),
         }
     }
 }
-
 
 pub fn parse_line(input: &str) -> Result<Vec<ScopeSymbol>, LineParseError> {
     let mut stack: Vec<ScopeSymbol> = vec![];
 
     for (idx, c) in input.chars().enumerate() {
         match ScopeSymbol::try_from_char(c) {
-            Ok(scope_symbol) => {
-                match scope_symbol.is_opening {
-                    true => {
-                        stack.push(scope_symbol);
-                    },
-                    false => {
-                        if let Some(last) = stack.last() {
-                            if last.is_opening && scope_symbol.complement == last.symbol {
-                                stack.pop();
-                            } else {
-                                return Err( LineParseError {
-                                    source: input,
-                                    index: Some(idx),
-                                    expected: Some(last.complement),
-                                    observed: Some(scope_symbol.symbol),
-                                    symbol: Some(scope_symbol),
-                                    kind: ErrorStructure::Corrupted
-                                });
-                            }
+            Ok(scope_symbol) => match scope_symbol.is_opening {
+                true => {
+                    stack.push(scope_symbol);
+                }
+                false => {
+                    if let Some(last) = stack.last() {
+                        if last.is_opening && scope_symbol.complement == last.symbol {
+                            stack.pop();
                         } else {
-                            return Err( LineParseError {
+                            return Err(LineParseError {
                                 source: input,
                                 index: Some(idx),
-                                expected: None,
-                                observed: Some(c),
+                                expected: Some(last.complement),
+                                observed: Some(scope_symbol.symbol),
                                 symbol: Some(scope_symbol),
-                                kind: ErrorStructure::NoOpeningPair
+                                kind: ErrorStructure::Corrupted,
                             });
                         }
+                    } else {
+                        return Err(LineParseError {
+                            source: input,
+                            index: Some(idx),
+                            expected: None,
+                            observed: Some(c),
+                            symbol: Some(scope_symbol),
+                            kind: ErrorStructure::NoOpeningPair,
+                        });
                     }
                 }
             },
             Err(e) => {
-                return Err( LineParseError {
+                return Err(LineParseError {
                     source: input,
                     index: Some(idx),
                     expected: None,
                     observed: e.observed,
                     symbol: None,
-                    kind: ErrorStructure::UnknownSymbol
+                    kind: ErrorStructure::UnknownSymbol,
                 });
             }
         }
@@ -176,13 +116,8 @@ pub fn parse_line(input: &str) -> Result<Vec<ScopeSymbol>, LineParseError> {
     Ok(stack)
 }
 
-
 mod part_1 {
-    use super::{
-        ScopeType,
-        parse_line,
-        ErrorStructure
-    };
+    use super::{parse_line, ErrorStructure, ScopeType};
 
     fn score(scope_type: ScopeType) -> usize {
         match scope_type {
@@ -198,16 +133,13 @@ mod part_1 {
             .iter()
             .filter_map(|&inp| parse_line(inp).err()) // Keep only the errors.
             .filter(|err| err.kind == ErrorStructure::Corrupted) // Only those that are corrupted.
-            .map(|err| {score(err.symbol.unwrap().kind)}) // Find the scores.
+            .map(|err| score(err.symbol.unwrap().kind)) // Find the scores.
             .sum()
     }
 }
 
 mod part_2 {
-    use super::{
-        ScopeType,
-        parse_line
-    };
+    use super::{parse_line, ScopeType};
 
     fn score(scope_type: ScopeType) -> usize {
         match scope_type {
@@ -222,21 +154,18 @@ mod part_2 {
         let mut scores = inputs
             .iter()
             .filter_map(|&inp| parse_line(inp).ok()) // Keep only the valid results.
-            .map(|stack|
+            .map(|stack| {
                 stack
                     .iter()
                     .rev()
-                    .fold(0usize, |acc, x| {
-                        5 * acc + score(x.kind.clone())
-                    })
-            )
+                    .fold(0usize, |acc, x| 5 * acc + score(x.kind.clone()))
+            })
             .collect::<Vec<usize>>();
 
         scores.sort_unstable();
         *scores.get(scores.len() / 2).unwrap()
     }
 }
-
 
 fn main() {
     let mut buffer: String = String::new();
@@ -249,7 +178,6 @@ fn main() {
 
     println!("Part 1: {:?}\nPart 2: {:?}", result_part_1, result_part_2);
 }
-
 
 #[cfg(test)]
 mod tests {
