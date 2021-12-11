@@ -163,7 +163,12 @@ mod part_2 {
             .collect::<Vec<usize>>();
 
         scores.sort_unstable();
-        *scores.get(scores.len() / 2).unwrap()
+        if !scores.is_empty() {
+            *scores.get(scores.len() / 2).unwrap()
+        } else {
+            eprintln!("Most likely a malformed input.");
+            0
+        }
     }
 }
 
