@@ -1,37 +1,41 @@
-use std::collections::{HashMap};
 use petgraph::graph::{NodeIndex, UnGraph};
+use std::collections::HashMap;
 use std::io;
 use std::io::Read;
 
-
 fn main() {
     let mut buffer: String = String::new();
-    io::stdin().read_to_string(&mut buffer).expect("Couldn't read from stdin.");
-    let (node_map, mut graph) = parser::graph(&buffer).expect("Couldn't parse.");
+    io::stdin()
+        .read_to_string(&mut buffer)
+        .expect("Couldn't read from stdin.");
+    let (node_map, graph) = parser::graph(&buffer).expect("Couldn't parse.");
 
-    let result_1 = part_1::solve(&node_map, &mut graph);
-    let result_2 = part_2::solve(&node_map, &mut graph);
+    let result_1 = part_1::solve(&node_map, &graph);
+    let result_2 = part_2::solve(&node_map, &graph);
     println!("Part 1: {:?}\nPart 2: {:?}", result_1, result_2);
 }
 
-
-
-
+type StringToNodeMap = HashMap<String, NodeIndex>;
+type Graph = UnGraph<(), ()>;
 
 mod parser {
-    use std::collections::{HashMap};
-    use std::io::{ErrorKind};
-    use petgraph::graph::{UnGraph, NodeIndex};
+    use super::{Graph, StringToNodeMap};
+    use petgraph::graph::{NodeIndex, UnGraph};
+    use std::collections::HashMap;
+    use std::io::ErrorKind;
 
-    pub fn graph(input: &str) -> Result<(HashMap<String, NodeIndex>, UnGraph<(), ()>), ErrorKind> {
+    pub fn graph(input: &str) -> Result<(StringToNodeMap, Graph), ErrorKind> {
         let mut node_map: HashMap<String, NodeIndex> = HashMap::new();
         let mut un_graph: UnGraph<(), ()> = UnGraph::new_undirected();
 
         let node_pairs: Vec<(String, String)> = input
             .split_whitespace()
             .map(|x| {
-                let nodes: Vec<String> = x.split("-").map(|x| String::from(x)).collect();
-                (nodes.first().unwrap().clone(), nodes.last().unwrap().clone())
+                let nodes: Vec<String> = x.split('-').map(String::from).collect();
+                (
+                    nodes.first().unwrap().clone(),
+                    nodes.last().unwrap().clone(),
+                )
             })
             .collect();
 
@@ -44,14 +48,14 @@ mod parser {
                 let added = un_graph.add_node(());
                 node_map.insert(end.clone(), added);
             }
-            let (start_node, end_node) = (*node_map.get(&start).unwrap(), *node_map.get(&end).unwrap());
+            let (start_node, end_node) =
+                (*node_map.get(&start).unwrap(), *node_map.get(&end).unwrap());
             un_graph.add_edge(start_node, end_node, ());
         }
 
         Ok((node_map, un_graph))
     }
 }
-
 
 mod part_1 {
     use super::*;
@@ -62,9 +66,8 @@ mod part_1 {
         results: &mut Vec<Vec<NodeIndex>>,
         visited: &mut HashMap<NodeIndex, bool>,
         current_walk: &mut Vec<NodeIndex>,
-        node_id_to_name_map: &HashMap<NodeIndex, String>
-    )
-    {
+        node_id_to_name_map: &HashMap<NodeIndex, String>,
+    ) {
         if *visited.get(&start).unwrap() && is_small(node_id_to_name_map, start) {
             return;
         }
@@ -79,7 +82,15 @@ mod part_1 {
         }
 
         for neighbor in graph.neighbors(start) {
-            dfs(graph, neighbor, end, results, visited, current_walk, node_id_to_name_map);
+            dfs(
+                graph,
+                neighbor,
+                end,
+                results,
+                visited,
+                current_walk,
+                node_id_to_name_map,
+            );
         }
 
         current_walk.pop().unwrap();
@@ -87,17 +98,14 @@ mod part_1 {
     }
 
     fn is_small(node_id_to_name_map: &HashMap<NodeIndex, String>, x: NodeIndex) -> bool {
-        node_id_to_name_map.get(&x).unwrap().to_lowercase() == *(node_id_to_name_map).get(&x).unwrap()
+        node_id_to_name_map.get(&x).unwrap().to_lowercase()
+            == *(node_id_to_name_map).get(&x).unwrap()
     }
 
-    pub fn solve(
-        node_map: &HashMap<String, NodeIndex>,
-        graph: &UnGraph<(), ()>
-    ) -> usize {
-
+    pub fn solve(node_map: &HashMap<String, NodeIndex>, graph: &UnGraph<(), ()>) -> usize {
         let mut node_id_name_map: HashMap<NodeIndex, String> = HashMap::new();
         for (k, v) in node_map {
-            node_id_name_map.insert(v.clone(), k.clone());
+            node_id_name_map.insert(*v, k.clone());
         }
 
         let mut current_walk: Vec<NodeIndex> = vec![];
@@ -115,16 +123,16 @@ mod part_1 {
             &mut results,
             &mut visited,
             &mut current_walk,
-            &node_id_name_map
+            &node_id_name_map,
         );
-       results.len()
+        results.len()
     }
-
 }
 
 mod part_2 {
     use super::*;
 
+    #[allow(clippy::too_many_arguments)]
     fn dfs(
         graph: &UnGraph<(), ()>,
         start: NodeIndex,
@@ -134,9 +142,8 @@ mod part_2 {
         current_walk: &mut Vec<NodeIndex>,
         node_id_to_name_map: &HashMap<NodeIndex, String>,
         mut twice_visited: bool,
-        mut index_twice_visited: Option<NodeIndex>
-    )
-    {
+        mut index_twice_visited: Option<NodeIndex>,
+    ) {
         let times_visited: usize = *visited.get(&start).unwrap();
 
         if is_start_or_end(node_id_to_name_map, start) {
@@ -173,12 +180,21 @@ mod part_2 {
         }
 
         for neighbor in graph.neighbors(start) {
-            dfs(graph, neighbor, end, results, visited, current_walk, node_id_to_name_map, twice_visited, index_twice_visited);
+            dfs(
+                graph,
+                neighbor,
+                end,
+                results,
+                visited,
+                current_walk,
+                node_id_to_name_map,
+                twice_visited,
+                index_twice_visited,
+            );
         }
 
         visited.insert(start, times_visited);
         current_walk.pop().unwrap();
-
     }
 
     fn is_small(node_id_to_name_map: &HashMap<NodeIndex, String>, x: NodeIndex) -> bool {
@@ -191,14 +207,10 @@ mod part_2 {
         val == "start" || val == "end"
     }
 
-    pub fn solve(
-        node_map: &HashMap<String, NodeIndex>,
-        graph: &UnGraph<(), ()>
-    ) -> usize {
-
+    pub fn solve(node_map: &HashMap<String, NodeIndex>, graph: &UnGraph<(), ()>) -> usize {
         let mut node_id_name_map: HashMap<NodeIndex, String> = HashMap::new();
         for (k, v) in node_map {
-            node_id_name_map.insert(v.clone(), k.clone());
+            node_id_name_map.insert(*v, k.clone());
         }
 
         let mut current_walk: Vec<NodeIndex> = vec![];
@@ -221,7 +233,7 @@ mod part_2 {
             &mut current_walk,
             &node_id_name_map,
             twice_visited,
-            index_twice_visited
+            index_twice_visited,
         );
         results.len()
     }
@@ -229,12 +241,11 @@ mod part_2 {
 
 #[cfg(test)]
 mod tests {
-    use petgraph::prelude::*;
     use super::*;
+    use petgraph::prelude::*;
 
-    fn setup_1() -> (HashMap<String, NodeIndex>, UnGraph<(), ()>)  {
-        let input: &str =
-            "
+    fn setup_1() -> (HashMap<String, NodeIndex>, UnGraph<(), ()>) {
+        let input: &str = "
                 start-A
                 start-b
                 A-c
@@ -242,14 +253,12 @@ mod tests {
                 b-d
                 A-end
                 b-end
-            "
-        ;
+            ";
         parser::graph(input).expect("Couldn't parse input 1.")
     }
 
     fn setup_2() -> (HashMap<String, NodeIndex>, UnGraph<(), ()>) {
-        let input: &str =
-            "
+        let input: &str = "
                 dc-end
                 HN-start
                 start-kj
@@ -264,10 +273,8 @@ mod tests {
         parser::graph(input).expect("Couldn't parse input 2.")
     }
 
-
     fn setup_3() -> (HashMap<String, NodeIndex>, UnGraph<(), ()>) {
-        let input: &str =
-            "
+        let input: &str = "
                 fs-end
                 he-DX
                 fs-he
@@ -331,5 +338,4 @@ mod tests {
         let expected: usize = 3509;
         assert_eq!(part_2::solve(&node_map, &mut graph), expected);
     }
-
 }
