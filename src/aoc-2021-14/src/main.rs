@@ -27,6 +27,17 @@ where
     pub fn get(&mut self, key: &T) -> Option<&usize> {
         self.inner.get(key)
     }
+
+    pub fn addsert(&mut self, key: T, val: usize) -> usize {
+        if let std::collections::hash_map::Entry::Vacant(e) = self.inner.entry(key) {
+            e.insert(val);
+            val
+        } else {
+            let current_count = self.inner.get_mut(&key).unwrap();
+            *current_count += val;
+            *current_count
+        }
+    }
 }
 
 impl<U> FromIterator<U> for Counter<U>
@@ -96,38 +107,14 @@ pub fn step(
 ) -> Counter<Pair> {
     let mut updated_pair_counter = Counter::<Pair>::new();
 
-    for (pair, count) in &pair_counter.inner {
+    for (pair, &count) in &pair_counter.inner {
         if mappings.contains_key(pair) {
             let new_char: char = *mappings.get(pair).unwrap();
 
-            if let std::collections::hash_map::Entry::Vacant(e) =
-                individual_counter.inner.entry(new_char)
-            {
-                e.insert(*count);
-            } else {
-                let val = individual_counter.get_mut(&new_char).unwrap();
-                *val += count;
-            }
-
-            let pair_to_update: Pair = (pair.0, new_char);
-            if let std::collections::hash_map::Entry::Vacant(e) =
-                updated_pair_counter.inner.entry(pair_to_update)
-            {
-                e.insert(*count);
-            } else {
-                let val = updated_pair_counter.get_mut(&pair_to_update).unwrap();
-                *val += *count;
-            }
-
-            let pair_to_update: Pair = (new_char, pair.1);
-            if let std::collections::hash_map::Entry::Vacant(e) =
-                updated_pair_counter.inner.entry(pair_to_update)
-            {
-                e.insert(*count);
-            } else {
-                let val = updated_pair_counter.get_mut(&pair_to_update).unwrap();
-                *val += *count;
-            }
+            // Add to value if already present, otherwise set value.
+            individual_counter.addsert(new_char, count);
+            updated_pair_counter.addsert((pair.0, new_char), count);
+            updated_pair_counter.addsert((new_char, pair.1), count);
         } else {
             panic!("No mapping found!? Probably malformed input.");
         }
