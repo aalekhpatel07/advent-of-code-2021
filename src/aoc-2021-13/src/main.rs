@@ -122,10 +122,10 @@ mod part_2 {
     use super::*;
 
     fn display(paper: &Paper) {
-        let mut grid: [[char; 40]; 6] = [['🥼'; 40]; 6];
+        let mut grid: [[char; 40]; 6] = [[' '; 40]; 6];
 
         for &(x, y) in paper {
-            grid[y][x] = '🫀';
+            grid[y][x] = '#';
         }
         for row in grid {
             println!(
