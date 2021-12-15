@@ -29,14 +29,7 @@ where
     }
 
     pub fn addsert(&mut self, key: T, val: usize) -> usize {
-        if let std::collections::hash_map::Entry::Vacant(e) = self.inner.entry(key) {
-            e.insert(val);
-            val
-        } else {
-            let current_count = self.inner.get_mut(&key).unwrap();
-            *current_count += val;
-            *current_count
-        }
+        *self.inner.entry(key).and_modify(|v| *v += val).or_insert(val)
     }
 }
 
@@ -48,12 +41,7 @@ where
         let mut counter: Counter<U> = Counter::new();
 
         for i in iter {
-            if let std::collections::hash_map::Entry::Vacant(e) = counter.inner.entry(i) {
-                e.insert(1);
-            } else {
-                let current_count = counter.inner.get_mut(&i).unwrap();
-                *current_count += 1;
-            }
+            counter.addsert(i, 1);
         }
         counter
     }
