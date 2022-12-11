@@ -1,6 +1,3 @@
-
-use std::str::Chars;
-
 use nom::{
     IResult,
     bytes::complete::take_while,
@@ -34,13 +31,3 @@ pub fn parse_hex(s: &str) -> IResult<&str, Vec<u8>> {
             .collect::<Vec<u8>>()
     )(s)
 }
-
-
-// Write a streaming parser that parses a hex stream into binary.
-
-// pub fn parse_hex_stream(s: &str) -> IResult<&str, char> {
-//     map_res(
-//         many0(parse_hex), 
-//         |bytes: Vec<u8>| bytes.into_iter().map(|b| format!("{b:08b}")).collect::<Vec<String>>()
-//     )(s)
-// }
