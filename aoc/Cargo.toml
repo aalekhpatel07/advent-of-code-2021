@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "aoc-core",
+    "driver",
+    "day-16",
+]
