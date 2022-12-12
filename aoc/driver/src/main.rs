@@ -3,6 +3,7 @@ use clap::Parser;
 use clap::arg;
 use clap::command;
 use day_16;
+use day_17;
 
 
 #[derive(Debug, Parser)]
@@ -32,6 +33,7 @@ fn main() {
 
     let answer: String = match args.day {
         16 => solve(day_16::Solver::default(), args.second),
+        17 => solve(day_17::Solver::default(), args.second),
         _ => unimplemented!("")
     };
 

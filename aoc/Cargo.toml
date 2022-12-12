@@ -3,5 +3,5 @@
 members = [
     "aoc-core",
     "driver",
-    "day-16",
+    "day-*",
 ]
