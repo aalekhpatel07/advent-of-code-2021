@@ -1,9 +1,4 @@
-use nom::{
-    IResult,
-    bytes::complete::take_while,
-    combinator::map
-};
-
+use nom::{bytes::complete::take_while, combinator::map, IResult};
 
 pub fn is_hex_digit(c: char) -> bool {
     c.is_digit(16)
@@ -22,12 +17,10 @@ pub fn is_one(c: char) -> bool {
 }
 
 pub fn parse_hex(s: &str) -> IResult<&str, Vec<u8>> {
-    map(
-        take_while(is_hex_digit),
-        |hex_str: &str| 
-            hex_str
+    map(take_while(is_hex_digit), |hex_str: &str| {
+        hex_str
             .chars()
             .map(|c: char| u8::from_str_radix(c.to_string().as_str(), 16).unwrap())
             .collect::<Vec<u8>>()
-    )(s)
+    })(s)
 }
