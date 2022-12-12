@@ -25,7 +25,11 @@ impl Solution for Solver {
     }
 
     fn part2(&self) -> String {
-        "".to_owned()
+        let input = include_str!("input.txt");
+        let bin = input.chars().map(|c| format!("{:04b}", c.to_digit(16).unwrap())).collect::<String>();
+        let (_, packet) = Packet::parse(&bin).unwrap();
+
+        format!("{}", packet.value())
     }
 }
 

@@ -44,7 +44,6 @@ impl From<u8> for Header {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PacketLiteral {
     pub header: Header,
-    // pub extra_end_bits: Option<String>,
     pub value: usize
 }
 
@@ -56,6 +55,14 @@ pub enum Packet {
 }
 
 impl Packet {
+
+    pub fn value(&self) -> usize {
+        match self {
+            Packet::Literal(l) => l.value,
+            Packet::Operator(o) => o.value(),
+        }
+    }
+
     pub fn sum_version_numbers(&self) -> usize {
         match self {
             Packet::Literal(l) => l.header.version as usize,
@@ -104,18 +111,9 @@ impl Parse for PacketLiteral {
             }
         )(rest)?;
 
-        // let (rest, extra_bits) = take_while(is_zero)(rest)?;
         let value = usize::from_str_radix(&bits, 2).unwrap();
-        
-        // let extra_bits = if extra_bits.len() > 0 {
-        //     Some(extra_bits.to_string())
-        // } else {
-        //     None
-        // };
 
         Ok((rest, PacketLiteral { header, value }))
-
-
     }
 }
 
@@ -123,9 +121,44 @@ impl Parse for PacketLiteral {
 #[derive(Debug, Clone)]
 pub struct PacketOperator {
     pub header: Header,
-    // pub extra_end_bits: Option<String>,
     pub length_type_id: u8,
     pub subpackets: Vec<Packet>
+}
+
+
+impl PacketOperator {
+    pub fn value(&self) -> usize {
+
+        let mut _iter = self.subpackets.iter().map(Packet::value);
+
+        match self.header.type_id {
+            // 0 => sum
+            0 => _iter.sum(),
+            // 1 => product
+            1 => _iter.product(),
+            // 2 => minimum,
+            2 => _iter.min().unwrap(),
+            // 3 => maximum,
+            3 => _iter.max().unwrap(),
+
+            5 | 6 | 7 => {
+                let first = _iter.next().unwrap();
+                let second = _iter.next().unwrap();
+
+                match self.header.type_id {
+                    // 5 => greater than,
+                    5 => if first > second {1} else {0},
+                    // 6 => less than,
+                    6 => if first < second {1} else {0},
+                    // 7 => equal,
+                    7 => if first == second {1} else {0},
+                    _ => panic!("Invalid length type id")
+                }
+            }
+
+            _ => panic!("Invalid length type id")
+        }
+    }
 }
 
 impl Parse for PacketOperator {
@@ -160,13 +193,10 @@ impl Parse for PacketOperator {
             }
         };
 
-        // let (rest, extra_bits) = take_while(is_zero)(rest)?;
-
         Ok((
             rest,
             PacketOperator {
                 header,
-                // extra_end_bits: { if extra_bits.len() > 0 {Some(extra_bits.to_string())} else {None} },
                 length_type_id,
                 subpackets: child_packets
             }
@@ -210,5 +240,19 @@ mod tests {
         let (_, packet) = Packet::parse(raw).unwrap();
         assert!(matches!(packet, Packet::Operator(_)));
 
+    }
+
+    #[test_case("0052E4A00905271049796FB8872A0D25B9FB746893847236200B4F0BCE5194401C9B9E3F9C63992C8931A65A1CCC0D222100511A00BCBA647D98BE29A397005E55064A9DFEEC86600BD002AF2343A91A1CCE773C26600D126B69D15A6793BFCE2775D9E4A9002AB86339B5F9AB411A15CCAF10055B3EFFC00BCCE730112FA6620076268CE5CDA1FCEB69005A3800D24F4DB66E53F074F811802729733E0040E5C5E5C5C8015F9613937B83F23B278724068018014A00588014005519801EC04B220116CC0402000EAEC03519801A402B30801A802138801400170A0046A800C10001AB37FD8EB805D1C266963E95A4D1A5FF9719FEF7FDB4FB2DB29008CD2BAFA3D005CD31EB4EF2EBE4F4235DF78C66009E80293AE9310D3FCBFBCA440144580273BAEE17E55B66508803C2E0087E630F72BCD5E71B32CCFBBE2800017A2C2803D272BCBCD12BD599BC874B939004B5400964AE84A6C1E7538004CD300623AC6C882600E4328F710CC01C82D1B228980292ECD600B48E0526E506F700760CCC468012E68402324F9668028200C41E8A30E00010D8B11E62F98029801AB88039116344340004323EC48873233E72A36402504CB75006EA00084C7B895198001098D91AE2190065933AA6EB41AD0042626A93135681A400804CB54C0318032200E47B8F71C0001098810D61D8002111B228468000E5269324AD1ECF7C519B86309F35A46200A1660A280150968A4CB45365A03F3DDBAE980233407E00A80021719A1B4181006E1547D87C6008E0043337EC434C32BDE487A4AE08800D34BC3DEA974F35C20100BE723F1197F59E662FDB45824AA1D2DDCDFA2D29EBB69005072E5F2EDF3C0B244F30E0600AE00203229D229B342CC007EC95F5D6E200202615D000FB92CE7A7A402354EE0DAC0141007E20C5E87A200F4318EB0C", 18234816469452)]
+    #[test_case("880086C3E88112", 7)]
+    #[test_case("CE00C43D881120", 9)]
+    #[test_case("04005AC33890", 54)]
+    #[test_case("D8005AC2A8F0", 1)]
+    #[test_case("F600BC2D8F", 0)]
+    #[test_case("9C005AC2F8F0", 0)]
+    #[test_case("9C0141080250320F1802104A08", 1)]
+    fn value(raw: &str, expected_value: usize) {
+        let bin = raw.chars().map(|c| format!("{:04b}", c.to_digit(16).unwrap())).collect::<String>();
+        let (_, packet) = Packet::parse(&bin).unwrap();
+        assert_eq!(packet.value(), expected_value);
     }
 }
