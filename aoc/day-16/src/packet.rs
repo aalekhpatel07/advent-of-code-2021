@@ -31,16 +31,6 @@ impl Parse for Header {
     }
 }
 
-
-impl From<u8> for Header {
-    fn from(s: u8) -> Self {
-        Self {
-            version: (s >> 5) & 0b111,
-            type_id: (s >> 2) & 0b111,
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PacketLiteral {
     pub header: Header,

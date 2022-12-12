@@ -1,7 +1,7 @@
 use nom::{
     IResult,
     bytes::complete::take_while,
-    combinator::{map_res, map}, multi::{many1, many0, many_m_n}, character::streaming::{hex_digit1, hex_digit0},
+    combinator::map
 };
 
 
