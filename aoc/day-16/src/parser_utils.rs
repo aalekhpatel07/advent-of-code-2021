@@ -1,7 +1,7 @@
 use nom::{bytes::complete::take_while, combinator::map, IResult};
 
 pub fn is_hex_digit(c: char) -> bool {
-    c.is_digit(16)
+    c.is_ascii_hexdigit()
 }
 
 pub fn is_binary(c: char) -> bool {

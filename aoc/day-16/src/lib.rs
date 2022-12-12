@@ -5,13 +5,8 @@ pub use parser_utils::*;
 
 use crate::packet::{Packet, Parse};
 
+#[derive(Default)]
 pub struct Solver {}
-
-impl Default for Solver {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl Solution for Solver {
     fn part1(&self) -> String {

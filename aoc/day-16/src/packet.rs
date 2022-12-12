@@ -1,7 +1,6 @@
 use crate::*;
 use nom::bytes::complete::*;
 use nom::{
-    branch::alt,
     character::complete::one_of,
     combinator::map,
     multi::{count, many0, many1},
@@ -100,7 +99,7 @@ impl Parse for PacketLiteral {
         let (rest, _) = map(
             preceded(tag("0"), take_while_m_n(4, 4, is_binary)),
             |byte: &str| {
-                bits.extend(byte.chars());
+                bits.push_str(byte);
             },
         )(rest)?;
 
@@ -137,29 +136,11 @@ impl PacketOperator {
 
                 match self.header.type_id {
                     // 5 => greater than,
-                    5 => {
-                        if first > second {
-                            1
-                        } else {
-                            0
-                        }
-                    }
+                    5 => usize::from(first > second),
                     // 6 => less than,
-                    6 => {
-                        if first < second {
-                            1
-                        } else {
-                            0
-                        }
-                    }
+                    6 => usize::from(first < second),
                     // 7 => equal,
-                    7 => {
-                        if first == second {
-                            1
-                        } else {
-                            0
-                        }
-                    }
+                    7 => usize::from(first == second),
                     _ => panic!("Invalid length type id"),
                 }
             }
