@@ -1,5 +1,5 @@
 mod parse;
-use std::fmt::Display;
+use std::{fmt::Display, ops::Add};
 
 use nom::IResult;
 use parse::*;
@@ -24,6 +24,12 @@ pub struct Tree {
 }
 
 pub type Node = (usize, Option<usize>);
+
+impl From<&str> for Tree {
+    fn from(s: &str) -> Self {
+        SnailFish::parse(s).unwrap().1.into()
+    }
+}
 
 
 impl PartialEq for Tree {
@@ -407,6 +413,61 @@ impl Tree {
         }
     }
 
+    pub fn reduce_all_the_way(&mut self) {
+        // let mut current = self.clone();
+        let mut previous = None;
+        loop {
+            self.reduce();
+            if let Some(prev) = previous {
+                if prev == *self {
+                    break;
+                } else {
+                    previous = Some(self.clone());
+                }
+            } else {
+                previous = Some(self.clone());
+            }
+        }
+    }
+
+
+    pub fn magnitude(&self, root: usize) -> usize {
+        let mut result: usize = 0;
+        
+        let (_, current_value) = self.at(root);
+        if let Some(value) = current_value {
+            result += value;
+            return result;
+        }
+
+        if self.has_left(root) {
+            let (index, _) = self.left(root);
+            result += 3 * self.magnitude(index);
+        }
+
+        if self.has_right(root) {
+            let (index, _) = self.right(root);
+            result += 2 * self.magnitude(index);
+        }
+
+        result
+
+    }
+
+}
+
+
+impl Add for Tree {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        // It's kinda expensive (i.e. O(n) space+time)
+        // because of the linear representation of the binary tree
+        // so might as well bring in the existing parser setup.
+        let as_str = format!("[{},{}]", self.as_string(), rhs.as_string());
+        let mut initial: Tree = SnailFish::parse(&as_str).unwrap().1.into();
+        initial.reduce_all_the_way();
+        initial
+    }
 }
 
 impl Display for Tree {
@@ -493,12 +554,23 @@ mod tests {
     #[test]
     fn test_reduce_all_the_way() {
         let raw: &str = "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]";
-        let mut tree: Tree = SnailFish::parse(raw).unwrap().1.into();
-        println!("starting: {}", tree);
-        while tree.reduce() {
-            println!("reduced: {}", tree);
-        }
-        let reduced: Tree = SnailFish::parse("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]").unwrap().1.into();
-        assert_eq!(tree, reduced);
+        let mut tree: Tree = raw.into();
+        tree.reduce_all_the_way();
+        let expected: Tree = "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]".into();
+        assert_eq!(tree, expected);
+    }
+
+    #[test_case("[1,5]", 3 * 1 + 2 * 5)]
+    #[test_case("[1,1]", 3 * 1 + 2 * 1)]
+    #[test_case("[1,[1,2]]", 3 * 1 + 2 * (3 * 1 + 2 * 2))]
+    #[test_case("[[1,2],[[3,4],5]]", 143)]
+    #[test_case("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", 1384)]
+    #[test_case("[[[[1,1],[2,2]],[3,3]],[4,4]]", 445)]
+    #[test_case("[[[[3,0],[5,3]],[4,4]],[5,5]]", 791)]
+    #[test_case("[[[[5,0],[7,4]],[5,5]],[6,6]]", 1137)]
+    #[test_case("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", 3488)]
+    fn test_magnitude(raw: &str, expected: usize) {
+        let tree = Tree::from(raw);
+        assert_eq!(tree.magnitude(0), expected);
     }
 }
