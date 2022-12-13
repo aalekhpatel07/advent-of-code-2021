@@ -96,6 +96,9 @@ impl Tree {
     pub fn left(&self, index: usize) -> Node {
         (2 * index + 1, *self.inner.get(2 * index + 1).unwrap())
     }
+    pub fn is_root(&self, index: usize) -> bool {
+        index == 0
+    }
     pub fn has_left(&self, index: usize) -> bool {
         (2 * index + 1) < self.len()
     }
@@ -144,40 +147,57 @@ impl Tree {
     }
 
     pub fn find_first_regular_number_to_the_left(&self, index: usize) -> Option<Node> {
-        // FIXME: Convert this to dfs towards left.
+        if self.is_root(index) {
+            return None;
+        }
 
-        // let shift = std::mem::size_of::<usize>() * 8 - 1;
-        // (index >> shift) & 1;
+        if self.is_left_child(index) {
+            let (parent, _) = self.parent(index);
+            return self.find_first_regular_number_to_the_left(parent)
+        }
 
-        let first_ancestor_that_our_number_is_left_of = index / (index & (!(index - 1)));
-        let idx = self.get_first_left_number_in_subtree_rooted_at(first_ancestor_that_our_number_is_left_of);
-        // self.right(first_ancestor_that_our_number_is_left_of);
-        
+        // Now we know we're a right child. So we may have a left sibling.
 
+        let (parent, _) = self.parent(index);
+        let (left_sibling, _) = self.left(parent);
+
+        let mut result = None;
+        self.find_rightmost_regular_number_ge(left_sibling, 0, &mut result);
+
+        result.map(|idx| self.at(idx))
+    }
+    pub fn find_first_regular_number_to_the_right(&self, index: usize) -> Option<Node> {
+        // FIXME: Convert this to dfs towards right.
+
+
+        if self.is_root(index) {
+            return None;
+        }
+
+        if self.is_right_child(index) {
+            let (parent, _) = self.parent(index);
+            return self.find_first_regular_number_to_the_right(parent)
+        }
+
+        // Now we know we're a left child. So we may have a right sibling.
+
+        let (parent, _) = self.parent(index);
+        let (right_sibling, _) = self.right(parent);
+
+        let mut result = None;
+        self.find_leftmost_regular_number_ge(right_sibling, 0, &mut result);
+
+        result.map(|idx| self.at(idx))
         // let (mut current_parent_index, _) = self.parent(index);
 
-        // while self.left(current_parent_index).1.is_none() {
+        // while self.right(current_parent_index).1.is_none() {
         //     if current_parent_index == 0 {
         //         return None;
         //     }
         //     current_parent_index = self.parent(current_parent_index).0;
         // }
 
-        // Some(self.left(current_parent_index))
-        idx.map(|idx| self.at(idx))
-    }
-    pub fn find_first_regular_number_to_the_right(&self, index: usize) -> Option<Node> {
-        // FIXME: Convert this to dfs towards right.
-        let (mut current_parent_index, _) = self.parent(index);
-
-        while self.right(current_parent_index).1.is_none() {
-            if current_parent_index == 0 {
-                return None;
-            }
-            current_parent_index = self.parent(current_parent_index).0;
-        }
-
-        Some(self.right(current_parent_index))
+        // Some(self.right(current_parent_index))
     }
 
     pub fn is_left_child(&self, index: usize) -> bool {
@@ -195,8 +215,8 @@ impl Tree {
         let (left_index, left_value) = self.left(parent);
         let (right_index, right_value) = self.right(parent);
 
-        let first_left = self.find_first_regular_number_to_the_left(parent);
-        let first_right = self.find_first_regular_number_to_the_right(parent);
+        let first_left = self.find_first_regular_number_to_the_left(left_index);
+        let first_right = self.find_first_regular_number_to_the_right(right_index);
 
         if let Some((first_left_index, first_left_value)) = first_left {
             self.set_data(first_left_index, first_left_value.unwrap() + left_value.unwrap());
@@ -428,7 +448,8 @@ mod tests {
     fn test_explode1() {
         let raw = "[[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]";
         let mut tree: Tree = SnailFish::parse(raw).unwrap().1.into();
-        tree.reduce();
+        tree.explode_parent(22);
+        // tree.reduce();
         // println!("{}", tree);
         assert_eq!(tree.as_string(), "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]".to_owned());
     }
