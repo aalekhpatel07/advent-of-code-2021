@@ -17,14 +17,6 @@ pub struct Pair {
     pub right: SnailFish,
 }
 
-// #[derive(Debug, PartialEq, Eq, Clone)]
-// pub struct Node(usize);
-
-// impl Default for Node {
-//     fn default() -> Self {
-//         Node(0)
-//     }
-// }
 
 #[derive(Debug, Clone)]
 pub struct Tree {
@@ -158,8 +150,8 @@ impl Tree {
 
         // Now we know we're a right child. So we may have a left sibling.
 
-        let (parent, _) = self.parent(index);
-        let (left_sibling, _) = self.left(parent);
+        let (parent, _parent_value) = self.parent(index);
+        let (left_sibling, _sibling_value) = self.left(parent);
 
         let mut result = None;
         self.find_rightmost_regular_number_ge(left_sibling, 0, &mut result);
@@ -167,8 +159,6 @@ impl Tree {
         result.map(|idx| self.at(idx))
     }
     pub fn find_first_regular_number_to_the_right(&self, index: usize) -> Option<Node> {
-        // FIXME: Convert this to dfs towards right.
-
 
         if self.is_root(index) {
             return None;
@@ -181,23 +171,13 @@ impl Tree {
 
         // Now we know we're a left child. So we may have a right sibling.
 
-        let (parent, _) = self.parent(index);
-        let (right_sibling, _) = self.right(parent);
+        let (parent, _parent_value) = self.parent(index);
+        let (right_sibling, _sibling_value) = self.right(parent);
 
         let mut result = None;
         self.find_leftmost_regular_number_ge(right_sibling, 0, &mut result);
 
         result.map(|idx| self.at(idx))
-        // let (mut current_parent_index, _) = self.parent(index);
-
-        // while self.right(current_parent_index).1.is_none() {
-        //     if current_parent_index == 0 {
-        //         return None;
-        //     }
-        //     current_parent_index = self.parent(current_parent_index).0;
-        // }
-
-        // Some(self.right(current_parent_index))
     }
 
     pub fn is_left_child(&self, index: usize) -> bool {
@@ -329,14 +309,23 @@ impl Tree {
             let (index, value) = self.left(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
+                return *result;
             }
             self.find_leftmost_regular_number_ge(index, geq, result);
+        }
+
+        // Check ourselves, in case we're a literal.
+        let (index, value) = self.at(root);
+        if value.is_some() && value.unwrap() >= geq {
+            *result = Some(index);
+            return *result;
         }
 
         if self.has_right(root) {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
+                return *result;
             }
             self.find_leftmost_regular_number_ge(index, geq, result);
         }
@@ -355,14 +344,23 @@ impl Tree {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
+                return *result;
             }
             self.find_rightmost_regular_number_ge(index, geq, result);
+        }
+
+        // Check ourselves, in case we're a literal.
+        let (index, value) = self.at(root);
+        if value.is_some() && value.unwrap() >= geq {
+            *result = Some(index);
+            return *result;
         }
 
         if self.has_left(root) {
             let (index, value) = self.left(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
+                return *result;
             }
             self.find_rightmost_regular_number_ge(index, geq, result);
         }
