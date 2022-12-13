@@ -18,12 +18,33 @@ pub struct Pair {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Tree {
-    inner: Vec<Option<usize>>,
+    pub(crate) inner: Vec<Option<usize>>,
 }
 
 pub type Node = (usize, Option<usize>);
+
+
+impl PartialEq for Tree {
+    fn eq(&self, other: &Tree) -> bool {
+        self
+        .inner
+        .iter()
+        .zip(
+            other
+            .inner
+            .iter()
+        )
+        .all(|(&x, &y)| {
+            match (x, y) {
+                (Some(x), Some(y)) => x == y,
+                (None, None) => true,
+                _ => false
+            }
+        })
+    }
+}
 
 
 impl Tree {
@@ -470,13 +491,14 @@ mod tests {
     }
 
     #[test]
-    fn test_reduce() {
+    fn test_reduce_all_the_way() {
         let raw: &str = "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]";
         let mut tree: Tree = SnailFish::parse(raw).unwrap().1.into();
         println!("starting: {}", tree);
         while tree.reduce() {
             println!("reduced: {}", tree);
         }
-
+        let reduced: Tree = SnailFish::parse("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]").unwrap().1.into();
+        assert_eq!(tree, reduced);
     }
 }
