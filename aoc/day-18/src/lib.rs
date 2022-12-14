@@ -5,11 +5,10 @@ use aoc_core::Solution;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tree::*;
 
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum SnailFish {
     Pair(Box<Pair>),
-    Literal(usize)
+    Literal(usize),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -22,22 +21,16 @@ pub struct Pair {
 pub struct Solver {}
 
 pub fn build_trees(s: &str) -> Vec<Tree> {
-    s
-    .lines()
-    .map(Tree::from)
-    .collect()
+    s.lines().map(Tree::from).collect()
 }
 
 /// Add the given list of snailfish numbers while reducing
-/// them as many times as required. Return the magnitude of 
+/// them as many times as required. Return the magnitude of
 /// the final snailfish number that stands.
 pub fn solve_part1(s: &str) -> usize {
     let trees = build_trees(s);
     let mut acc_tree = trees.first().unwrap().clone();
-    trees
-    .iter()
-    .skip(1)
-    .for_each(|tree| {
+    trees.iter().skip(1).for_each(|tree| {
         acc_tree.add(tree);
     });
     acc_tree.magnitude(0)
@@ -49,23 +42,24 @@ pub fn solve_part2(s: &str) -> usize {
     let mut tree_pair: Vec<(Tree, Tree)> = vec![];
     for x in 0..trees.len() {
         for y in 0..trees.len() {
-            if x == y { continue }
+            if x == y {
+                continue;
+            }
             tree_pair.push((trees.get(x).unwrap().clone(), trees.get(y).unwrap().clone()));
         }
     }
 
     tree_pair
-    // rayon goes brrrr.
-    .par_iter()
-    .map(|(t1, t2)| {
-        let mut acc_tree = t1.clone();
-        acc_tree.add(t2);
-        acc_tree.magnitude(0)
-    })
-    .max()
-    .unwrap()
+        // rayon goes brrrr.
+        .par_iter()
+        .map(|(t1, t2)| {
+            let mut acc_tree = t1.clone();
+            acc_tree.add(t2);
+            acc_tree.magnitude(0)
+        })
+        .max()
+        .unwrap()
 }
-
 
 impl Solution for Solver {
     fn part1(&self) -> String {
@@ -81,7 +75,8 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
+    #[test_case(
+        "[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
 [[[5,[2,8]],4],[5,[[9,9],0]]]
 [6,[[[6,2],[5,6]],[[7,6],[4,7]]]]
 [[[6,[0,7]],[0,9]],[4,[9,[9,0]]]]
@@ -90,9 +85,11 @@ mod tests {
 [[[[5,4],[7,7]],8],[[8,3],8]]
 [[9,3],[[9,9],[6,[4,9]]]]
 [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]
-[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]", 4140
-)]
-#[test_case("[[[[2,8],[4,6]],[[2,4],[9,4]]],[[[0,6],[4,6]],[1,6]]]
+[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]",
+        4140
+    )]
+    #[test_case(
+        "[[[[2,8],[4,6]],[[2,4],[9,4]]],[[[0,6],[4,6]],[1,6]]]
 [7,[[5,7],1]]
 [[[[8,8],7],5],[[[5,6],1],6]]
 [[[8,5],[[0,0],[4,9]]],[2,8]]
@@ -191,13 +188,16 @@ mod tests {
 [[[[7,7],[1,2]],[6,6]],[8,[5,8]]]
 [[7,[4,[8,9]]],[[4,[7,2]],8]]
 [[[6,4],[7,7]],[[[3,7],0],[0,1]]]
-[[1,[5,9]],[8,[4,6]]]", 4347)]
+[[1,[5,9]],[8,[4,6]]]",
+        4347
+    )]
     fn test_part1(raw: &str, final_sum: usize) {
         let solution = solve_part1(raw);
         assert_eq!(solution, final_sum);
     }
 
-    #[test_case("[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
+    #[test_case(
+        "[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
 [[[5,[2,8]],4],[5,[[9,9],0]]]
 [6,[[[6,2],[5,6]],[[7,6],[4,7]]]]
 [[[6,[0,7]],[0,9]],[4,[9,[9,0]]]]
@@ -206,8 +206,11 @@ mod tests {
 [[[[5,4],[7,7]],8],[[8,3],8]]
 [[9,3],[[9,9],[6,[4,9]]]]
 [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]
-[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]", 3993)]
-    #[test_case("[[[[2,8],[4,6]],[[2,4],[9,4]]],[[[0,6],[4,6]],[1,6]]]
+[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]",
+        3993
+    )]
+    #[test_case(
+        "[[[[2,8],[4,6]],[[2,4],[9,4]]],[[[0,6],[4,6]],[1,6]]]
 [7,[[5,7],1]]
 [[[[8,8],7],5],[[[5,6],1],6]]
 [[[8,5],[[0,0],[4,9]]],[2,8]]
@@ -306,14 +309,16 @@ mod tests {
 [[[[7,7],[1,2]],[6,6]],[8,[5,8]]]
 [[7,[4,[8,9]]],[[4,[7,2]],8]]
 [[[6,4],[7,7]],[[[3,7],0],[0,1]]]
-[[1,[5,9]],[8,[4,6]]]", 4721)]
+[[1,[5,9]],[8,[4,6]]]",
+        4721
+    )]
     fn test_part2(raw: &str, highest_magnitude: usize) {
-
         let solution = solve_part2(raw);
         assert_eq!(solution, highest_magnitude);
     }
 
-    #[test_case("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
+    #[test_case(
+        "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
 [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
 [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
 [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
@@ -323,8 +328,7 @@ mod tests {
 [1,[[[9,3],9],[[9,0],[0,7]]]]
 [[[5,[7,4]],7],1]
 [[[[4,2],2],6],[8,7]]",
-
-    "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]
+        "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]
 [[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]
 [[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]
 [[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]
@@ -333,19 +337,18 @@ mod tests {
 [[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]
 [[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]
 [[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]",
-
-    "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]",
-    3488
+        "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]",
+        3488
     )]
-    fn test_list_sum_reduction(homework_assignment: &str, intermediate_sums: &str, final_sum: &str, magnitude: usize) {
-
+    fn test_list_sum_reduction(
+        homework_assignment: &str,
+        intermediate_sums: &str,
+        final_sum: &str,
+        magnitude: usize,
+    ) {
         let trees = build_trees(homework_assignment);
         let mut acc_tree = trees.first().unwrap().clone();
-        trees
-        .iter()
-        .skip(1)
-        .enumerate()
-        .for_each(|(index, tree)| {
+        trees.iter().skip(1).enumerate().for_each(|(index, tree)| {
             acc_tree.add(tree);
             let expected_tree: Tree = intermediate_sums.lines().nth(index).unwrap().into();
             assert_eq!(acc_tree.as_string(), expected_tree.as_string());
@@ -353,5 +356,4 @@ mod tests {
         assert_eq!(acc_tree.as_string(), final_sum);
         assert_eq!(acc_tree.magnitude(0), magnitude);
     }
-
 }

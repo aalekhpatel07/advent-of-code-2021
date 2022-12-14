@@ -1,10 +1,18 @@
-use nom::{*, sequence::tuple, bytes::complete::tag, character::complete::{digit1, space0}, combinator::map, branch::alt};
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{digit1, space0},
+    combinator::map,
+    sequence::tuple,
+    *,
+};
 
 use crate::{Pair, SnailFish};
 
-
 pub trait Parse {
-    fn parse(s: &str) -> IResult<&str, Self> where Self: Sized;
+    fn parse(s: &str) -> IResult<&str, Self>
+    where
+        Self: Sized;
 }
 
 impl Parse for Pair {
@@ -18,21 +26,20 @@ impl Parse for Pair {
             space0,
             SnailFish::parse,
             space0,
-            tag("]")
+            tag("]"),
         ))(s)?;
 
-        Ok((s, Pair{left: b, right: d}))
+        Ok((s, Pair { left: b, right: d }))
     }
 }
 
 impl Parse for SnailFish {
     fn parse(s: &str) -> IResult<&str, Self> {
         alt((
-            map(digit1, |s: &str| SnailFish::Literal(s.parse::<usize>().unwrap())),
-            map(
-                Pair::parse, 
-                |p| SnailFish::Pair(Box::new(p))
-            )
+            map(digit1, |s: &str| {
+                SnailFish::Literal(s.parse::<usize>().unwrap())
+            }),
+            map(Pair::parse, |p| SnailFish::Pair(Box::new(p))),
         ))(s)
     }
 }
@@ -53,7 +60,13 @@ mod tests {
     fn simple_parse2() {
         let raw = "[[1,2],3]";
         let (_, p) = Pair::parse(raw).unwrap();
-        assert_eq!(p.left, SnailFish::Pair(Box::new(Pair { left: SnailFish::Literal(1), right: SnailFish::Literal(2) })));
+        assert_eq!(
+            p.left,
+            SnailFish::Pair(Box::new(Pair {
+                left: SnailFish::Literal(1),
+                right: SnailFish::Literal(2)
+            }))
+        );
         assert_eq!(p.right, SnailFish::Literal(3));
     }
 
