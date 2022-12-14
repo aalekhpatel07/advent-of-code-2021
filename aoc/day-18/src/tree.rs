@@ -1,4 +1,4 @@
-use std::{ops::Add, fmt::Display};
+use std::{ops::{Add, AddAssign}, fmt::Display, str::FromStr};
 
 use crate::{SnailFish, parse::Parse};
 
@@ -14,7 +14,16 @@ pub type Node = (usize, Option<usize>);
 
 impl From<&str> for Tree {
     fn from(s: &str) -> Self {
-        SnailFish::parse(s).unwrap().1.into()
+        Tree::from_str(s).unwrap()
+    }
+}
+
+impl FromStr for Tree {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        SnailFish::parse(s)
+        .map(|(_, t)| t.into())
+        .map_err(|e| e.to_string())
     }
 }
 
@@ -128,7 +137,7 @@ impl Tree {
         .inner
         .iter()
         .skip(start)
-        .take(end - start)
+        .take(end - start + 1)
         .enumerate()
         .map(
             move |(idx, x)|(start + idx, *x)
@@ -208,6 +217,10 @@ impl Tree {
 
         let (left_index, left_value) = self.left(parent);
         let (right_index, right_value) = self.right(parent);
+
+        if left_value.is_none() || right_value.is_none() {
+            panic!("Tried to explode a parent with non-regular entries.")
+        }
 
         let first_left = self.find_first_regular_number_to_the_left(left_index);
         let first_right = self.find_first_regular_number_to_the_right(right_index);
@@ -311,76 +324,87 @@ impl Tree {
         .next()
     }
 
-
-
-    fn find_leftmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) -> Option<usize> {
+    fn find_leftmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
         
         if result.is_some() {
-            return *result
+            return;
         }
 
         if self.has_left(root) {
             let (index, value) = self.left(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return *result;
+            } else {
+                self.find_leftmost_regular_number_ge(index, geq, result);
             }
-            self.find_leftmost_regular_number_ge(index, geq, result);
+        }
+
+        if result.is_some() {
+            return;
         }
 
         // Check ourselves, in case we're a literal.
         let (index, value) = self.at(root);
         if value.is_some() && value.unwrap() >= geq {
             *result = Some(index);
-            return *result;
+            return;
         }
 
         if self.has_right(root) {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return *result;
+                return;
+            } else {
+                self.find_leftmost_regular_number_ge(index, geq, result);
             }
-            self.find_leftmost_regular_number_ge(index, geq, result);
         }
 
-        return None
+        if result.is_some() {
+            return
+        }
     }
 
 
-    fn find_rightmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) -> Option<usize> {
+    fn find_rightmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
         
         if result.is_some() {
-            return *result
+            return
         }
 
         if self.has_right(root) {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return *result;
+                return;
             }
-            self.find_rightmost_regular_number_ge(index, geq, result);
+            else {
+                self.find_rightmost_regular_number_ge(index, geq, result);
+            }
         }
 
+        if result.is_some() {
+            return
+        }
         // Check ourselves, in case we're a literal.
         let (index, value) = self.at(root);
         if value.is_some() && value.unwrap() >= geq {
             *result = Some(index);
-            return *result;
+            return;
         }
 
         if self.has_left(root) {
             let (index, value) = self.left(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return *result;
+                return;
+            } else {
+                self.find_rightmost_regular_number_ge(index, geq, result);
             }
-            self.find_rightmost_regular_number_ge(index, geq, result);
         }
-
-
-        return None
+        if result.is_some() {
+            return
+        }
     }
 
 
@@ -401,7 +425,6 @@ impl Tree {
     }
 
     pub fn reduce_all_the_way(&mut self) {
-        // let mut current = self.clone();
         let mut previous = None;
         loop {
             self.reduce();
@@ -440,22 +463,19 @@ impl Tree {
         result
 
     }
-
-}
-
-
-impl Add for Tree {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        // It's kinda expensive (i.e. O(n) space+time)
+    pub fn add(&mut self, rhs: &Self) {
+        // It's kinda expensive (i.e. O(n) time + roughly O(2 ** n) space) anyways
         // because of the linear representation of the binary tree
         // so might as well bring in the existing parser setup.
         let as_str = format!("[{},{}]", self.as_string(), rhs.as_string());
         let mut initial: Tree = SnailFish::parse(&as_str).unwrap().1.into();
+
         initial.reduce_all_the_way();
-        initial
+        self.inner = initial.inner.clone();
     }
+
 }
+
 
 impl Display for Tree {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -522,19 +542,30 @@ mod tests {
     }
         
 
-    #[test]
-    fn test_string() {
-        let raw = "[[6,[5,[7,0]]],3]";
-        let tree: Tree = SnailFish::parse(raw).unwrap().1.into();
+    #[test_case("[[6,[5,[7,0]]],3]")]
+    #[test_case("[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]")]
+    #[test_case("[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]")]
+    #[test_case("[[[5,[2,8]],4],[5,[[9,9],0]]]")]
+    #[test_case("[6,[[[6,2],[5,6]],[[7,6],[4,7]]]]")]
+    #[test_case("[[[6,[0,7]],[0,9]],[4,[9,[9,0]]]]")]
+    #[test_case("[[[7,[6,4]],[3,[1,3]]],[[[5,5],1],9]]")]
+    #[test_case("[[6,[[7,3],[3,2]]],[[[3,8],[5,7]],4]]")]
+    #[test_case("[[[[5,4],[7,7]],8],[[8,3],8]]")]
+    #[test_case("[[9,3],[[9,9],[6,[4,9]]]]")]
+    #[test_case("[[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]")]
+    #[test_case("[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]")]
+    #[test_case("[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")]
+    #[test_case("[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]")]
+    fn test_string(raw: &str) {
+        let tree: Tree = raw.into();
         assert_eq!(&tree.as_string(), raw);
     }
 
-    #[test_case("[[[[0,7],4],[15,[0,13]]],[1,1]]", 15, "[[[[0,7],4],[[7,8],[0,13]]],[1,1]]")]
-    #[test_case("[[[[0,7],4],[[7,8],[0,13]]],[1,1]]", 13, "[[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]")]
-    fn test_split(initial: &str, value: usize, expected: &str) {
-        let mut tree: Tree = SnailFish::parse(initial).unwrap().1.into();
-        let index = tree.position(value).unwrap();
-        tree.split(index);
+    #[test_case("[[[[0,7],4],[15,[0,13]]],[1,1]]", "[[[[0,7],4],[[7,8],[0,13]]],[1,1]]")]
+    #[test_case("[[[[0,7],4],[[7,8],[0,13]]],[1,1]]", "[[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]")]
+    fn test_split(initial: &str, expected: &str) {
+        let mut tree: Tree = initial.into();
+        tree.reduce();
         assert_eq!(tree.as_string(), expected);
     }
 
@@ -560,4 +591,34 @@ mod tests {
         let tree = Tree::from(raw);
         assert_eq!(tree.magnitude(0), expected);
     }
+
+
+    #[test_case("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]", "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")]
+    #[test_case("[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]", "[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]", "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]")]
+    #[test_case("[[[[4,3],4],4],[7,[[8,4],9]]]", "[1,1]", "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")]
+    #[test_case("[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]", "[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]", "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]")]
+    #[test_case("[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]", "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]")]
+    #[test_case("[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]", "[[2,[2,2]],[8,[8,1]]]", "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]")]
+    #[test_case("[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]", "[2,9]", "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]")]
+    #[test_case("[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]", "[1,[[[9,3],9],[[9,0],[0,7]]]]", "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]")]
+    fn test_add(op1: &str, op2: &str, expected: &str) {
+        let mut tree1: Tree = op1.into();
+        let tree2: Tree = op2.into();
+        tree1.add(&tree2);
+        assert_eq!(tree1.as_string(), expected);
+    }
+
+
+    #[test_case("[[[[5,11],[13,0]],[[15,14],[14,0]]],[[2,[0,[11,4]]],[[[6,7],1],[7,[1,6]]]]]", "[[[[5,11],[13,0]],[[15,14],[14,0]]],[[2,[11,0]],[[[10,7],1],[7,[1,6]]]]]")]
+    fn test_reduce(initial: &str, expected: &str) {
+        let mut tree: Tree = initial.into();
+        println!("{}", tree.as_string());
+        tree.reduce();
+        assert_eq!(tree.as_string(), expected);
+    }
+
+
+
+
+
 }

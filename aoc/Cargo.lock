@@ -132,7 +132,9 @@ dependencies = [
 name = "day-18"
 version = "0.1.0"
 dependencies = [
+ "aoc-core",
  "nom",
+ "rayon",
  "test-case",
 ]
 
@@ -144,6 +146,7 @@ dependencies = [
  "clap",
  "day-16",
  "day-17",
+ "day-18",
 ]
 
 [[package]]

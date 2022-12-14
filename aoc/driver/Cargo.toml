@@ -9,4 +9,5 @@ edition = "2021"
 clap = { version = "4.0.29", features = ["derive"] }
 day-16 = { version  = "0.1.0", path = "../day-16" }
 day-17 = { version  = "0.1.0", path = "../day-17" }
+day-18 = { version  = "0.1.0", path = "../day-18" }
 aoc-core = { path = "../aoc-core" }

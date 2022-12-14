@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 nom = "7.1.1"
+aoc-core = { path = "../aoc-core" }
+rayon = "1.6.1"
 
 [dev-dependencies]
 test-case = "2.2.2"
-aoc-core = { path = "../aoc-core" }
