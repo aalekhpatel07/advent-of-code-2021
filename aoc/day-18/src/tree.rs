@@ -1,11 +1,8 @@
-use std::{ops::{Add, AddAssign}, fmt::Display, str::FromStr};
-
+use std::{fmt::Display, str::FromStr};
 use crate::{SnailFish, parse::Parse};
 
 
-
-
-#[derive(Debug, Clone, Eq)]
+#[derive(Clone, Eq)]
 pub struct Tree {
     pub(crate) inner: Vec<Option<usize>>,
 }
@@ -27,7 +24,8 @@ impl FromStr for Tree {
     }
 }
 
-
+/// Call two trees equal if the regular numbers they store at the leaves
+/// are all equal.
 impl PartialEq for Tree {
     fn eq(&self, other: &Tree) -> bool {
         self
@@ -58,20 +56,8 @@ impl Tree {
     pub fn len(&self) -> usize {
         self.inner.len()
     }
-    pub fn get_depth(&self, index: usize) -> usize {
-        let mut i = index;
-        let mut depth = 0;
-        while i > 0 {
-            i = (i - 1) / 2;
-            depth += 1;
-        }
-        depth
-    }
 
-    pub fn root(&self) -> Node {
-        (0, *self.inner.get(0).unwrap())
-    }
-
+    /// Set the left child of the `parent` node at the given index to `node`.
     pub fn set_left(&mut self, parent: usize, node: usize) {
         let i = parent * 2 + 1;
         if i >= self.inner.len() {
@@ -80,6 +66,7 @@ impl Tree {
         self.inner[i] = Some(node);
     }
 
+    /// Set the right child of the `parent` node at the given index to `node`.
     pub fn set_right(&mut self, parent: usize, node: usize) {
         let i = parent * 2 + 2;
         if i >= self.inner.len() {
@@ -88,6 +75,8 @@ impl Tree {
         self.inner[i] = Some(node);
     }
 
+    /// Given an index for a node, and a regular number,
+    /// set the node at the index to the regular number.
     pub fn set_data(&mut self, index: usize, data: usize) {
         if index >= self.inner.len() {
             self.inner.resize(index + 1, Default::default());
@@ -100,29 +89,37 @@ impl Tree {
         }
     }
 
+    /// Mark the node at the index as having no regular number.
     pub fn clear_data(&mut self, index: usize) {
         self.inner[index] = None;
     }
 
+    /// Get the node at the given index.
     pub fn at(&self, index: usize) -> Node {
         (index, *self.inner.get(index).unwrap())
     }
 
+    /// Get the left child of the node at the given index.
     pub fn left(&self, index: usize) -> Node {
         (2 * index + 1, *self.inner.get(2 * index + 1).unwrap())
     }
+    /// Returns true if the node at the given index is root, false otherwise.
     pub fn is_root(&self, index: usize) -> bool {
         index == 0
     }
+    /// Returns true if the node at the given index has a left child, false otherwise.
     pub fn has_left(&self, index: usize) -> bool {
         (2 * index + 1) < self.len()
     }
+    /// Returns true if the node at the given index has a right child, false otherwise.
     pub fn has_right(&self, index: usize) -> bool {
         (2 * index + 2) < self.len()
     }
+    /// Get the right child of the node at the given index.
     pub fn right(&self, index: usize) -> Node {
         (2 * index + 2, *self.inner.get(2 * index + 2).unwrap())
     }
+    /// Get the parent of the node at the given index.
     pub fn parent(&self, index: usize) -> Node {
         if index <= 1 { 
             return (0, None);
@@ -130,6 +127,7 @@ impl Tree {
         ((index - 1) / 2, *self.inner.get((index - 1) / 2).unwrap())
     }
 
+    /// Get an iterator over the nodes living at the given depth.
     pub fn nodes_at_depth(&self, depth: usize) -> impl Iterator<Item=Node> + '_ {
         let start = 2usize.pow(depth as u32) - 1;
         let end = 2usize.pow((depth + 1) as u32) - 1;
@@ -144,23 +142,11 @@ impl Tree {
         )
     }
 
-    pub fn position(&self, value: usize) -> Option<usize> {
-        self.inner.iter().position(|x| x == &Some(value))
-    }
 
-    pub fn get_first_left_number_in_subtree_rooted_at(&self, root: usize) -> Option<usize> {
-        let mut result = None;
-        self.find_leftmost_regular_number_ge(root, 0, &mut result);
-        result
-    }
-
-
-    pub fn get_first_right_number_in_subtree_rooted_at(&self, root: usize) -> Option<usize> {
-        let mut result = None;
-        self.find_rightmost_regular_number_ge(root, 0, &mut result);
-        result
-    }
-
+    /// Given a node's position in the tree, find the first regular number to the left of it.
+    /// This is done by traversing up the tree while we're a left sibling and then finally if
+    /// and when we become a right sibling, we ask the parent to give the right-most regular number in the sub-tree
+    /// rooted at our left sibling.
     pub fn find_first_regular_number_to_the_left(&self, index: usize) -> Option<Node> {
         if self.is_root(index) {
             return None;
@@ -181,6 +167,11 @@ impl Tree {
 
         result.map(|idx| self.at(idx))
     }
+
+    /// Given a node's position in the tree, find the first regular number to the right of it.
+    /// This is done by traversing up the tree while we're a right sibling and then finally if
+    /// and when we become a left sibling, we ask the parent to give the left-most regular number in the sub-tree
+    /// rooted at our right sibling.
     pub fn find_first_regular_number_to_the_right(&self, index: usize) -> Option<Node> {
 
         if self.is_root(index) {
@@ -203,16 +194,22 @@ impl Tree {
         result.map(|idx| self.at(idx))
     }
 
+    /// Returns true if the node at `index` is a left child of its parent node, false otherwise.
     pub fn is_left_child(&self, index: usize) -> bool {
         let (parent_index, _) = self.parent(index);
         self.left(parent_index).0 == index
     }
 
+    /// Returns true if the node at `index` is a right child of its parent node, false otherwise.
     pub fn is_right_child(&self, index: usize) -> bool {
         let (parent_index, _) = self.parent(index);
         self.right(parent_index).0 == index
     }
 
+    /// Given the index of the parent to explode (i.e. the index of the pair node to explode),
+    /// send the left number to the right-most regular number to the left it and send the right
+    /// number to the left-most regular number to the right of it, if they exist. Finally, 
+    /// replace the whole pair with a `0`.
     pub fn explode_parent(&mut self, parent: usize) {
 
         let (left_index, left_value) = self.left(parent);
@@ -225,16 +222,20 @@ impl Tree {
         let first_left = self.find_first_regular_number_to_the_left(left_index);
         let first_right = self.find_first_regular_number_to_the_right(right_index);
 
+        // If right-most regular number to the left exists, update its value.
         if let Some((first_left_index, first_left_value)) = first_left {
             self.set_data(first_left_index, first_left_value.unwrap() + left_value.unwrap());
         }
+        // If left-most regular number to the right exists, update its value.
         if let Some((first_right_index, first_right_value)) = first_right {
             self.set_data(first_right_index, first_right_value.unwrap() + right_value.unwrap());
         }
 
+        // Erase the nodes inside this pair.
         self.clear_data(left_index);
         self.clear_data(right_index);
 
+        // Ask the pair's parent about which child to set to 0.
         if self.is_left_child(parent) {
             self.set_left(self.parent(parent).0, 0);
         } else {
@@ -243,20 +244,27 @@ impl Tree {
 
     }
 
+    /// Given the index of a regular node, split it into a pair of regular nodes
+    /// with the numbers being half of the original number rounded down and up,
+    /// respectively.
     pub fn split(&mut self, index: usize) {
-        let (_, node) = self.at(index);
+        let (node_index, node) = self.at(index);
         if node.is_none() {
-            panic!("Cannot split a non-literal node.");
+            panic!("Tried to split a irregular node at : {}", node_index);
         }
-        // Since its a literal, its not gonna have any children.
-        // So we can just set the left and right to the new values.
+
+        // We're about to become a pair so clear our `Some`-ness.
         self.clear_data(index);
 
+        // Since its a regular node, its not gonna have any children.
+        // and we can just set the left and right to the new values.
         self.set_left(index, node.unwrap() / 2);
         self.set_right(index, (node.unwrap() + 1) / 2);
 
     }
 
+   /// Iterate over the tree in-order and build a vector representing
+   /// the bracket string representation of the tree.
     pub fn inorder_traverse(&self, index: usize, result: &mut Vec<String>) {
 
         if self.has_left(index) && self.has_right(index) {
@@ -304,6 +312,9 @@ impl Tree {
         }
     }
 
+
+    /// Build the bracket representation of the tree
+    /// to help with debugging.
     pub fn as_string(&self) -> String {
         let mut result = vec![];
         self.inorder_traverse(0, &mut result);
@@ -312,7 +323,7 @@ impl Tree {
 
     pub fn find_index_of_child_whose_parent_to_explode(&self) -> Option<usize> {
         // We'll search from the left by default so the first
-        // node we find at at the 5th depth is the node whose
+        // node we find at at the 5th depth (i.e. inside 4 brackets) is the node whose
         // parent we want to explode.
         self
         .nodes_at_depth(5)
@@ -324,7 +335,11 @@ impl Tree {
         .next()
     }
 
-    fn find_leftmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
+    /// Find the index of the left-most regular number in a sub-tree rooted at `root`
+    /// that is greater than or equal to `geq`.
+    /// 
+    /// If no such number exists, set the result to `None`.
+    pub fn find_leftmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
         
         if result.is_some() {
             return;
@@ -347,26 +362,24 @@ impl Tree {
         let (index, value) = self.at(root);
         if value.is_some() && value.unwrap() >= geq {
             *result = Some(index);
-            return;
         }
 
         if self.has_right(root) {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return;
             } else {
                 self.find_leftmost_regular_number_ge(index, geq, result);
             }
         }
-
-        if result.is_some() {
-            return
-        }
     }
 
 
-    fn find_rightmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
+    /// Find the index of the right-most regular number in a sub-tree rooted at `root`
+    /// that is greater than or equal to `geq`.
+    /// 
+    /// If no such number exists, set the result to `None`.
+    pub fn find_rightmost_regular_number_ge(&self, root: usize, geq: usize, result: &mut Option<usize>) {
         
         if result.is_some() {
             return
@@ -376,7 +389,6 @@ impl Tree {
             let (index, value) = self.right(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return;
             }
             else {
                 self.find_rightmost_regular_number_ge(index, geq, result);
@@ -386,28 +398,25 @@ impl Tree {
         if result.is_some() {
             return
         }
+
         // Check ourselves, in case we're a literal.
         let (index, value) = self.at(root);
         if value.is_some() && value.unwrap() >= geq {
             *result = Some(index);
-            return;
         }
 
         if self.has_left(root) {
             let (index, value) = self.left(root);
             if value.is_some() && value.unwrap() >= geq {
                 *result = Some(index);
-                return;
             } else {
                 self.find_rightmost_regular_number_ge(index, geq, result);
             }
         }
-        if result.is_some() {
-            return
-        }
     }
 
-
+    /// If we can find an pair 4 levels deep, explode it. Otherwise if we can find a number we can split,
+    /// split it. Otherwise, we're done. If we didn't do either, return False, otherwise return True.
     pub fn reduce(&mut self) -> bool {
         if let Some(index) = self.find_index_of_child_whose_parent_to_explode() {
             self.explode_parent(self.parent(index).0);
@@ -424,23 +433,18 @@ impl Tree {
         }
     }
 
+    /// Repeatedly reduce until we can't any more.
     pub fn reduce_all_the_way(&mut self) {
-        let mut previous = None;
         loop {
-            self.reduce();
-            if let Some(prev) = previous {
-                if prev == *self {
-                    break;
-                } else {
-                    previous = Some(self.clone());
-                }
-            } else {
-                previous = Some(self.clone());
+            if !self.reduce() {
+                break
             }
         }
     }
 
-
+    /// Get the magnitude of a snailfish number,
+    /// i.e. for pairs it is the 3 * magnitude(left) + 2 * magnitude(right)
+    /// and for literals it is the literal value.
     pub fn magnitude(&self, root: usize) -> usize {
         let mut result: usize = 0;
         
@@ -463,15 +467,23 @@ impl Tree {
         result
 
     }
+
+    /// Given another tree, add that to us, mutating
+    /// ourselves in the process. Then reduce ourselves all the way.
     pub fn add(&mut self, rhs: &Self) {
+
         // It's kinda expensive (i.e. O(n) time + roughly O(2 ** n) space) anyways
         // because of the linear representation of the binary tree
         // so might as well bring in the existing parser setup.
+
+        // I'd guess a better way to implement this Tree would be a HashMap<usize, usize>
+        // where we can treat absence of keys as the absence of nodes and nodes are encoded
+        // the same way as this linear representation of binary tree (i.e. left = 2 * parent + 1, right = 2 * parent + 2).
         let as_str = format!("[{},{}]", self.as_string(), rhs.as_string());
-        let mut initial: Tree = SnailFish::parse(&as_str).unwrap().1.into();
+        let mut initial: Tree = Tree::from(as_str.as_str());
 
         initial.reduce_all_the_way();
-        self.inner = initial.inner.clone();
+        self.inner = initial.inner;
     }
 
 }
@@ -485,6 +497,8 @@ impl Display for Tree {
 
 
 impl From<SnailFish> for Tree {
+    /// Let's build a tree from the snailfish representation
+    /// by doing a depth-first traversal of the snailfish representation.
     fn from(snailfish: SnailFish) -> Self {
         let mut tree = Tree::new();
         let mut stack = vec![(0, snailfish)];
@@ -575,7 +589,7 @@ mod tests {
         let mut tree: Tree = raw.into();
         tree.reduce_all_the_way();
         let expected: Tree = "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]".into();
-        assert_eq!(tree, expected);
+        assert_eq!(tree.as_string(), expected.as_string());
     }
 
     #[test_case("[1,5]", 3 * 1 + 2 * 5)]
@@ -616,9 +630,5 @@ mod tests {
         tree.reduce();
         assert_eq!(tree.as_string(), expected);
     }
-
-
-
-
 
 }

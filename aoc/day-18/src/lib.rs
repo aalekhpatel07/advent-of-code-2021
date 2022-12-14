@@ -28,6 +28,9 @@ pub fn build_trees(s: &str) -> Vec<Tree> {
     .collect()
 }
 
+/// Add the given list of snailfish numbers while reducing
+/// them as many times as required. Return the magnitude of 
+/// the final snailfish number that stands.
 pub fn solve_part1(s: &str) -> usize {
     let trees = build_trees(s);
     let mut acc_tree = trees.first().unwrap().clone();
@@ -40,6 +43,7 @@ pub fn solve_part1(s: &str) -> usize {
     acc_tree.magnitude(0)
 }
 
+/// Find the maximum magnitude amongst any sum of two snailfish numbers in the given input.
 pub fn solve_part2(s: &str) -> usize {
     let trees = build_trees(s);
     let mut tree_pair: Vec<(Tree, Tree)> = vec![];
@@ -51,6 +55,7 @@ pub fn solve_part2(s: &str) -> usize {
     }
 
     tree_pair
+    // rayon goes brrrr.
     .par_iter()
     .map(|(t1, t2)| {
         let mut acc_tree = t1.clone();

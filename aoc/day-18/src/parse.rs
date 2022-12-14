@@ -1,4 +1,4 @@
-use nom::{*, sequence::{delimited, tuple}, bytes::complete::tag, character::complete::digit1, combinator::map, branch::alt};
+use nom::{*, sequence::tuple, bytes::complete::tag, character::complete::{digit1, space0}, combinator::map, branch::alt};
 
 use crate::{Pair, SnailFish};
 
@@ -9,12 +9,15 @@ pub trait Parse {
 
 impl Parse for Pair {
     fn parse(s: &str) -> IResult<&str, Self> {
-        let (s, (_, b, _, d, _)) = tuple((
-            tag("["), 
+        let (s, (_, _, b, _, _, _, d, _, _)) = tuple((
+            tag("["),
+            space0,
             SnailFish::parse,
+            space0,
             tag(","),
+            space0,
             SnailFish::parse,
-            // SnailFish::parse,
+            space0,
             tag("]")
         ))(s)?;
 
@@ -58,7 +61,6 @@ mod tests {
     fn simple_parse3() {
         let raw = "[[[[[9,8],1],2],3],4]";
         let (_, p) = Pair::parse(raw).unwrap();
-        println!("{:#?}", p);
-        // assert_eq!(p.left)
+        assert_eq!(p.right, SnailFish::Literal(4));
     }
 }
