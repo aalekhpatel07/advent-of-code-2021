@@ -46,6 +46,11 @@ impl PartialEq for Tree {
     }
 }
 
+impl Default for Tree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Tree {
     pub fn new() -> Self {
@@ -318,7 +323,7 @@ impl Tree {
     pub fn as_string(&self) -> String {
         let mut result = vec![];
         self.inorder_traverse(0, &mut result);
-        result.join("").to_owned()
+        result.join("")
     }
 
     pub fn find_index_of_child_whose_parent_to_explode(&self) -> Option<usize> {
@@ -592,9 +597,9 @@ mod tests {
         assert_eq!(tree.as_string(), expected.as_string());
     }
 
-    #[test_case("[1,5]", 3 * 1 + 2 * 5)]
-    #[test_case("[1,1]", 3 * 1 + 2 * 1)]
-    #[test_case("[1,[1,2]]", 3 * 1 + 2 * (3 * 1 + 2 * 2))]
+    #[test_case("[1,5]", 3 + 2 * 5)]
+    #[test_case("[1,1]", 3 + 2)]
+    #[test_case("[1,[1,2]]", 3 + 2 * (3 + 2 * 2))]
     #[test_case("[[1,2],[[3,4],5]]", 143)]
     #[test_case("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", 1384)]
     #[test_case("[[[[1,1],[2,2]],[3,3]],[4,4]]", 445)]
